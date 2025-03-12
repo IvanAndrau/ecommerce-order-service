@@ -4,7 +4,9 @@ public enum OrderStatus {
     CREATED("CREATED"),
     PAID("PAID"),
     SHIPPED("SHIPPED"),
-    DELIVERED("DELIVERED");
+    DELIVERED("DELIVERED"),
+    CANCELED("CANCELED");
+
 
     private final String status;
 
