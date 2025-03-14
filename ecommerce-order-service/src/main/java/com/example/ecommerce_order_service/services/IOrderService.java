@@ -2,7 +2,6 @@ package com.example.ecommerce_order_service.services;
 
 import com.example.ecommerce_order_service.DTO.*;
 import com.example.ecommerce_order_service.entities.Order;
-import com.example.ecommerce_order_service.entities.OrderItem;
 import com.example.ecommerce_order_service.entities.OrderStatus;
 import org.springframework.stereotype.Service;
 

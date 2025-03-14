@@ -8,6 +8,7 @@ import com.example.ecommerce_order_service.repositories.OrderItemRepository;
 import com.example.ecommerce_order_service.repositories.OrderRepository;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -15,7 +16,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@Service
+@Service("OrderServiceImpl")
+@Slf4j
 @AllArgsConstructor
 public class OrderServiceImpl implements IOrderService {
 
