@@ -1,4 +1,4 @@
-package com.example.ecommerce_order_service.conrollers;
+package com.example.ecommerce_order_service.controllers;
 
 import com.example.ecommerce_order_service.DTO.*;
 import com.example.ecommerce_order_service.entities.Order;
@@ -8,6 +8,10 @@ import com.example.ecommerce_order_service.exceptions.PaymentProcessingException
 import com.example.ecommerce_order_service.exceptions.RefundProcessingException;
 import com.example.ecommerce_order_service.exceptions.ResourceNotFoundException;
 import com.example.ecommerce_order_service.services.IOrderService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +20,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/orders")
+@Tag(name = "Order Management", description = "APIs for Managing Orders")
 public class OrderController {
     private final IOrderService orderService;
 
@@ -23,11 +28,14 @@ public class OrderController {
         this.orderService = orderService;
     }
 
-    // Create a new order
+    @Operation(summary = "Create a new order", description = "Creates an order for a user with a list of items.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Order created successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid order request"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     @PostMapping()
-    public ResponseEntity<Order> createOrder(
-            @RequestParam Long userId,
-            @RequestBody List<OrderItemRequest> orderItems) {
+    public ResponseEntity<Order> createOrder(@RequestParam Long userId, @RequestBody List<OrderItemRequest> orderItems) {
         if (orderItems.isEmpty()) {
             throw new OrderValidationException("Order must contain at least one item.");
         }
@@ -36,30 +44,40 @@ public class OrderController {
         return ResponseEntity.ok(order);
     }
 
-    // Retrieve a specific order by ID
+    @Operation(summary = "Retrieve a specific order by ID", description = "Returns details of an order.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Order retrieved successfully"),
+            @ApiResponse(responseCode = "404", description = "Order not found"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     @GetMapping("/{orderId}")
-    public ResponseEntity<OrderResponse> getOrder(
-            @PathVariable Long orderId) {
+    public ResponseEntity<OrderResponse> getOrder(@PathVariable Long orderId) {
         OrderResponse order = orderService.getOrderById(orderId);
-
         if (order == null) {
             throw new ResourceNotFoundException("Order not found with ID: " + orderId);
         }
         return ResponseEntity.ok(order);
     }
 
-    // Get all orders for a user
+    @Operation(summary = "Get all orders for a user", description = "Retrieves all orders for a specific user.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Orders retrieved successfully"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     @GetMapping("user/{userId}")
-    public ResponseEntity<List<OrderResponse>> getUserOrders(
-            @PathVariable Long userId) {
+    public ResponseEntity<List<OrderResponse>> getUserOrders(@PathVariable Long userId) {
         List<OrderResponse> orders = orderService.getOrdersByUserId(userId);
         return ResponseEntity.ok(orders);
     }
 
-    // Get orders by status (CREATED, PAID, SHIPPED, DELIVERED)
+    @Operation(summary = "Get orders by status", description = "Retrieves all orders by their status (CREATED, PAID, SHIPPED, DELIVERED).")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Orders retrieved successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid order status"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     @GetMapping("status/{status}")
-    public ResponseEntity<List<OrderResponse>> getOrdersByStatus(
-            @PathVariable String status) {
+    public ResponseEntity<List<OrderResponse>> getOrdersByStatus(@PathVariable String status) {
         try {
             OrderStatus orderStatus = OrderStatus.valueOf(status.toUpperCase());
             List<OrderResponse> orders = orderService.getOrdersByStatus(orderStatus);
@@ -69,29 +87,40 @@ public class OrderController {
         }
     }
 
-    // Cancel an order (if not shipped/delivered)
+    @Operation(summary = "Cancel an order", description = "Cancels an order if it has not been shipped or delivered.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Order cancelled successfully"),
+            @ApiResponse(responseCode = "400", description = "Order cannot be cancelled"),
+            @ApiResponse(responseCode = "404", description = "Order not found"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     @PatchMapping("{orderId}/cancel")
     public ResponseEntity<Void> cancelOrder(@PathVariable Long orderId) {
         orderService.cancelOrder(orderId);
         return ResponseEntity.noContent().build();
     }
 
-    // Update order status
+    @Operation(summary = "Update order status", description = "Updates the status of an existing order.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Order status updated successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid order status"),
+            @ApiResponse(responseCode = "404", description = "Order not found"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     @PatchMapping("{orderId}/status")
-    public ResponseEntity<Order> updateOrderStatus(
-            @PathVariable Long orderId,
-            @RequestBody OrderStatus status
-    ) {
+    public ResponseEntity<Order> updateOrderStatus(@PathVariable Long orderId, @RequestBody OrderStatus status) {
         Order order = orderService.updateOrderStatus(orderId, status);
         return ResponseEntity.ok(order);
     }
 
-    // Process payment for an order
+    @Operation(summary = "Process payment for an order", description = "Processes payment for an existing order.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Payment processed successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid payment request"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     @PostMapping("/{orderId}/pay")
-    public ResponseEntity<Void> processPayment(
-            @PathVariable Long orderId,
-            @RequestBody PaymentRequest paymentRequest
-    ) {
+    public ResponseEntity<Void> processPayment(@PathVariable Long orderId, @RequestBody PaymentRequest paymentRequest) {
         try {
             orderService.processPayment(orderId, paymentRequest);
             return ResponseEntity.ok().build();
@@ -100,12 +129,14 @@ public class OrderController {
         }
     }
 
-    // Process refund for an order
+    @Operation(summary = "Process refund for an order", description = "Processes a refund for an order that has been paid.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Refund processed successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid refund request"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     @PostMapping("/{orderId}/refund")
-    public ResponseEntity<Void> processRefund(
-            @PathVariable Long orderId,
-            @RequestBody RefundRequest refundRequest
-    ) {
+    public ResponseEntity<Void> processRefund(@PathVariable Long orderId, @RequestBody RefundRequest refundRequest) {
         try {
             orderService.processRefund(orderId, refundRequest);
             return ResponseEntity.ok().build();
@@ -114,26 +145,27 @@ public class OrderController {
         }
     }
 
-    // Retrieve all order items by order ID
+    @Operation(summary = "Retrieve all order items by order ID", description = "Gets all items for a given order.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Order items retrieved successfully"),
+            @ApiResponse(responseCode = "404", description = "Order not found"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     @GetMapping("/{orderId}/items")
-    public ResponseEntity<List<OrderItemResponse>> getOrderItemsByOrderId(
-            @PathVariable Long orderId
-    ) {
+    public ResponseEntity<List<OrderItemResponse>> getOrderItemsByOrderId(@PathVariable Long orderId) {
         List<OrderItemResponse> orderItems = orderService.getOrderItemsByOrderId(orderId);
         return ResponseEntity.ok(orderItems);
     }
 
-    // Remove an order item from an order
+    @Operation(summary = "Remove an order item", description = "Removes an item from an order.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Order item removed successfully"),
+            @ApiResponse(responseCode = "404", description = "Order item not found"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     @DeleteMapping("/{orderId}/items/{orderItemId}")
-    public ResponseEntity<Void> removeOrderItem(
-            @PathVariable Long orderId,
-            @PathVariable Long orderItemId) {
+    public ResponseEntity<Void> removeOrderItem(@PathVariable Long orderId, @PathVariable Long orderItemId) {
         orderService.removeOrderItem(orderId, orderItemId);
         return ResponseEntity.noContent().build();
     }
-
-
-
-
-
 }
