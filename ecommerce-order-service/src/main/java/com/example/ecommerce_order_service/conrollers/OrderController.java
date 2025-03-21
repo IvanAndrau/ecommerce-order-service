@@ -1,4 +1,4 @@
-package com.example.ecommerce_order_service.controllers;
+package com.example.ecommerce_order_service.conrollers;
 
 import com.example.ecommerce_order_service.DTO.*;
 import com.example.ecommerce_order_service.entities.Order;
@@ -11,9 +11,11 @@ import com.example.ecommerce_order_service.services.IOrderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,6 +23,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/orders")
 @Tag(name = "Order Management", description = "APIs for Managing Orders")
+@SecurityRequirement(name = "bearerAuth") // <==== All endpoints require JWT **except where overridden**
 public class OrderController {
     private final IOrderService orderService;
 
@@ -95,6 +98,7 @@ public class OrderController {
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     @PatchMapping("{orderId}/cancel")
+    @PreAuthorize("hasRole('ADMIN')") // Ensures only ADMIN can access this endpoint
     public ResponseEntity<Void> cancelOrder(@PathVariable Long orderId) {
         orderService.cancelOrder(orderId);
         return ResponseEntity.noContent().build();
@@ -136,6 +140,7 @@ public class OrderController {
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
     @PostMapping("/{orderId}/refund")
+    @PreAuthorize("hasRole('ADMIN')") // Ensures only ADMIN can access this endpoint
     public ResponseEntity<Void> processRefund(@PathVariable Long orderId, @RequestBody RefundRequest refundRequest) {
         try {
             orderService.processRefund(orderId, refundRequest);
